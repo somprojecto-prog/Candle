@@ -3,13 +3,19 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { getStoryMode, setStoryMode, STORY_FAIL_EVENT, type StoryMode } from "@/lib/story";
+import {
+  getStoryMode,
+  setStoryMode,
+  STORY_FAIL_EVENT,
+  storyFlags,
+  type StoryMode,
+} from "@/lib/story";
 import StoryStage from "@/components/story/StoryStage";
 import { useStoryScroll } from "@/components/story/useStoryScroll";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const DESKTOP_QUERY = "(min-width: 1024px)";
+const DESKTOP_QUERY = "(min-width: 900px)";
 const REDUCED_QUERY = "(prefers-reduced-motion: reduce)";
 
 let webglCache: boolean | null = null;
@@ -25,16 +31,25 @@ function hasWebGL(): boolean {
 }
 
 function computeMode(failed: boolean): StoryMode {
+  const wide = window.matchMedia(DESKTOP_QUERY).matches;
+  const webgl = hasWebGL();
+  let forced: string | null = null;
+
   if (process.env.NODE_ENV !== "production") {
-    const forced = new URLSearchParams(window.location.search).get("story");
-    if (forced === "on" || forced === "off") return forced;
+    const q = new URLSearchParams(window.location.search).get("story");
+    if (q === "on" || q === "off") forced = q;
   }
-  const on =
-    window.matchMedia(DESKTOP_QUERY).matches &&
-    !window.matchMedia(REDUCED_QUERY).matches &&
-    hasWebGL() &&
-    !failed;
-  return on ? "on" : "off";
+
+  const result: StoryMode = forced
+    ? (forced as StoryMode)
+    : wide && webgl && !failed
+      ? "on"
+      : "off";
+
+  if (process.env.NODE_ENV !== "production" && result === "off") {
+    console.info("[story] off:", { wide, webgl, failed, forced });
+  }
+  return result;
 }
 
 export default function StoryProvider({ children }: { children: ReactNode }) {
@@ -53,6 +68,7 @@ export default function StoryProvider({ children }: { children: ReactNode }) {
     let raf = 0;
 
     const apply = () => {
+      storyFlags.reducedMotion = mqReduced.matches;
       const next = computeMode(failed);
       document.documentElement.dataset.story = next;
       if (next !== getStoryMode()) {

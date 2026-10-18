@@ -38,12 +38,13 @@ export const viewport: Viewport = {
   themeColor: "#0A0A0A",
 };
 
+// Valor interpolado no servidor: em produção o parâmetro ?story= nunca é lido.
 const ALLOW_STORY_PARAM = process.env.NODE_ENV !== "production";
 
 const INIT_SCRIPT = `(function(){
 var d=document.documentElement;
 d.classList.add("js");
-var on=window.matchMedia("(min-width:1024px)").matches&&!window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+var on=window.matchMedia("(min-width:900px)").matches;
 ${
   ALLOW_STORY_PARAM
     ? 'var q=new URLSearchParams(window.location.search).get("story");if(q==="on")on=true;if(q==="off")on=false;'

@@ -4,23 +4,23 @@ import { useEffect, type RefObject } from "react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { HEADER_H } from "@/lib/constants";
-import { resetStoryState, STORY_SECTION_IDS, storyState } from "@/lib/story";
+import { resetStoryState, STORY_SECTION_IDS, storyEase, storyState } from "@/lib/story";
 import { useStoryMode } from "@/components/story/useStoryMode";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const smoothstep = (t: number): number => {
-  const c = Math.min(1, Math.max(0, t));
-  return c * c * (3 - 2 * c);
-};
-
+/**
+ * start[i] = início do pin da secção i; end[i] = fim do pin.
+ * Entre end[i] e start[i+1] a câmera transita; fora disso, phase é o inteiro do passo.
+ */
 function computePhase(y: number, start: number[], end: number[]): number {
   if (y <= end[0]) return 0;
   for (let i = 0; i < 4; i++) {
     if (y < start[i + 1]) {
       const span = start[i + 1] - end[i];
-      return span > 0 ? i + smoothstep((y - end[i]) / span) : i;
+      return span > 0 ? i + storyEase((y - end[i]) / span) : i;
     }
+    // Intervalo degenerado (start[i+1] <= end[i]) cai aqui: salto seco para i + 1.
     if (i + 1 < 4 && y <= end[i + 1]) return i + 1;
   }
   return 4;
