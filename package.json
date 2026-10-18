@@ -8,6 +8,12 @@
     "start": "next start",
     "lint": "next lint"
   },
+  "scripts": {
+  "dev": "next dev",
+  "build": "next build",
+  "start": "next start",
+  "postinstall": "prisma generate"
+},
   "dependencies": {
     "@gsap/react": "^2.1.2",
     "@react-three/drei": "^10.0.0",
